@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+
+
+.playfair{
+  font-family: "Playfair Display", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+.markdown-body {
+  background-color: transparent !important;
+}
+
+.w-md-editor-text-pre > code,
+.w-md-editor-text-input {
+  font-size: 16px !important;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+  @layer utilities {
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;  /* Para Internet Explorer y Edge */
+      scrollbar-width: none;  /* Para Firefox */
+    }
+  }
+
+  pre {
+  width: 100%;
+  align-self: center;/* Evita que el código se salga horizontalmente y se centre en el medio */
+}
+code {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+  
