@@ -46,7 +46,7 @@ export interface UserDetails {
   uid: string | null;
   is_active: boolean | null;
   email: string | null;
-  user_name: string | null;
+  username: string | null;
   is_premium: boolean | null;
   is_staff: number | null;
   is_superuser: number | null;

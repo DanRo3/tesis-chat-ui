@@ -10,6 +10,7 @@ interface ConversationState {
   loading: boolean
   loadingDelete: boolean
   error: string | null
+  failedMessages: Message[] // Mensajes fallidos para reintentos
 }
 
 const initialState: ConversationState = {
@@ -39,6 +40,7 @@ const initialState: ConversationState = {
   loading: false,
   loadingDelete: false,
   error: null,
+  failedMessages: [],
 }
 
 const conversationSlice = createSlice({
@@ -64,9 +66,14 @@ const conversationSlice = createSlice({
           registered_by_username: '',
         }
       };
+      state.failedMessages = [];
     },
     setCurrentConversationId: (state, action: PayloadAction<string>) => {
       state.currentConversationId = action.payload;
+    },
+    removeFailedMessage: (state, action: PayloadAction<string>) => {
+      // Elimina el mensaje fallido por uid
+      state.failedMessages = state.failedMessages.filter(msg => msg.uid !== action.payload);
     }
   },
   extraReducers: (builder) => {
@@ -173,6 +180,14 @@ const conversationSlice = createSlice({
       .addCase(sendMessage.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        // Buscar el último mensaje del usuario (rol: 'user') que no esté en failedMessages
+        const userMessages = state.currentConversation.chat.chat_messages.filter(
+          msg => msg.rol === 'user' && !state.failedMessages.some(fm => fm.uid === msg.uid)
+        );
+        if (userMessages.length > 0) {
+          // Agregar el último mensaje del usuario a failedMessages
+          state.failedMessages.push(userMessages[userMessages.length - 1]);
+        }
       })
       .addCase(getConversationDetails.pending, (state) => {
         state.loading = true;
@@ -189,5 +204,5 @@ const conversationSlice = createSlice({
   }
 })
 
-export const { addMessageToConversation, newConversation, setCurrentConversationId } = conversationSlice.actions;
+export const { addMessageToConversation, newConversation, setCurrentConversationId, removeFailedMessage } = conversationSlice.actions;
 export default conversationSlice.reducer;

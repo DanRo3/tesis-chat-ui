@@ -1,78 +1,88 @@
+import React, { useEffect, useRef, useState } from 'react';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
-import { createConversation, getConversationDetails, sendMessage } from '../../redux/chats/actions';
-import { useAppSelector } from '../../hooks/useStore';
-import { AppDispatch } from '../../redux/store/store';
-import { useDispatch } from 'react-redux';
+import { createConversation, getConversationDetails, renameConversation, sendMessage } from '../../redux/chats/actions';
+import { useAppSelector, useAppDispatch } from '../../hooks/useStore';
 import { v4 as uuidv4 } from 'uuid';
 import { addMessageToConversation } from '../../redux/chats/slice';
-import { useEffect, useState } from 'react';
 import Logo from '../../../public/logo.png';
+import { message } from 'antd';
 
-export const Chat = () => {
-  const dispatch: AppDispatch = useDispatch();
+export const Chat: React.FC = () => {
+  const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
-  const uid = useAppSelector(state => state.conversations.currentConversationId);
-  const messages = useAppSelector(state => state.conversations.currentConversation.chat.chat_messages);
+  const chatRef = useRef<HTMLDivElement>(null);
+  const uid = useAppSelector((state) => state.conversations.currentConversationId);
+  const current = useAppSelector((state) => state.conversations);
+  const messages = useAppSelector((state) => state.conversations.currentConversation.chat.chat_messages);
+  const user = useAppSelector((state) => state.auth.user);
   const year = new Date().getFullYear();
-  const user = useAppSelector(state => state.auth.user)
 
   useEffect(() => {
     if (uid) {
       dispatch(getConversationDetails(uid));
     }
-  }, [uid]);
+  }, [uid, dispatch]);
+
+  useEffect(() => {
+    // Auto-scroll al último mensaje
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const getTimeBasedGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return { text: `Buenos días ${user.user_name}`  };
-    if (hour < 18) return {text: `Buenas tardes ${user.user_name}` };
-    return { text: `Buenas noches ${user.user_name}` };
+    if (!user) return 'Hola';
+    if (hour < 12) return `Buenos días, ${user.username}`;
+    if (hour < 18) return `Buenas tardes, ${user.username}`;
+    return `Buenas noches, ${user.username}`;
   };
 
-  const handleSendMessage = async (content: string, imageData?: File, imagePreviewUrl?: string) => {
-    let currentUid = uid;
-
-    if (!currentUid) {
-      const result = await dispatch(createConversation());
-      if (createConversation.fulfilled.match(result)) {
-        currentUid = result.payload.uid;
-        await dispatch(getConversationDetails(currentUid));
-      } else {
-        return;
-      }
+  const editTitle = async()=>{
+    if(current.currentConversation.chat.title === "New Conversation" && current.currentConversation.chat.chat_messages.length>=1){
+      let newTitle = current.currentConversation.chat.chat_messages[1].text_message.slice(0, 20);
+      await dispatch(renameConversation({ id: uid, newTitle: newTitle })).unwrap();
     }
-
-    const userMessage = { text_message: content, image: imageData };
-
-    const message = {
-      text_message: content,
-      rol: 'user' as const,
-      chat_room: currentUid,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      uid: uuidv4(),
-      slug: null,
-      image: imagePreviewUrl || null,
-    };
+  }
 
 
-    dispatch(addMessageToConversation(message));
-    setIsLoading(true);
-    const response = await dispatch(sendMessage({ message: userMessage, chat_room: currentUid }));
-    // Only set loading to false after we confirm the message was sent successfully
-    if (sendMessage.fulfilled.match(response)) {
+  const handleSendMessage = async (content: string, imageData?: File, imagePreviewUrl?: string) => {
+    try {
+      let currentUid = uid;
+
+      if (!currentUid) {
+        const result = await dispatch(createConversation()).unwrap();
+        currentUid = result.uid;
+        await dispatch(getConversationDetails(currentUid)).unwrap();
+      }
+
+      const userMessage = { text_message: content, image: imageData };
+      const messageData = {
+        text_message: content,
+        rol: 'user' as const,
+        chat_room: currentUid,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        uid: uuidv4(),
+        slug: null,
+        image: imagePreviewUrl || null,
+      };
+
+      dispatch(addMessageToConversation(messageData));
+      setIsLoading(true);
+      await dispatch(sendMessage({ message: userMessage, chat_room: currentUid })).unwrap();
+      await editTitle();
+    } catch (error) {
+      message.error('Error al enviar el mensaje. Intenta de nuevo.');
+    } finally {
       setIsLoading(false);
-    } else {
-      setIsLoading(false);
-      // Optionally handle error here
     }
   };
 
   return (
-    <div className="flex flex-col h-screen md:w-full w-screen overflow-hidden">
-      {/* Contenedor del chat ajustado */}
-      <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-2 sm:px-4 no-scrollbar">
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-white ">
+      <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-4 scrollbar-hide" ref={chatRef}>
         {uid ? (
           <div className="h-full">
             <MessageList messages={messages} />
@@ -85,39 +95,48 @@ export const Chat = () => {
                     className='w-6 h-6 animate-pulse'
                   />
                   <div className="flex gap-1">
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-amber-500/30 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-1.5 h-1.5 bg-amber-500/50 rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                   </div>
                 </div>
               </div>
             )}
-            <div className='pb-10'></div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center select-none">
-            <img src={Logo} width={200} height={200}/>
-            <h2 className="text-2xl font-semibold mb-4">
-              <span className="bg-[#8d4925] text-transparent bg-clip-text">
-                {getTimeBasedGreeting().text}
-              </span>
-            </h2>
-            <p className="text-gray-500 mb-6">
-              Parece que aún no has iniciado una conversación. ¡Comencemos!
-            </p>
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <img src={Logo} alt="HChat" width={150} height={150} />
+            <h2 className="text-2xl font-semibold mt-4 text-gray-800">{getTimeBasedGreeting()}</h2>
+            <p className="text-gray-500 mt-2 mb-4">Selecciona una pregunta para comenzar:</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                onClick={() => handleSendMessage('¿Cuál es la historia de Diario de la Marina?')}
+                className="px-3 cursor-pointer py-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300"
+              >
+                ¿Cuál es la historia de Diario de la Marina?
+              </button>
+              <button
+                onClick={() => handleSendMessage('¿Qué tipo de contenido publicaba HChat?')}
+                className="px-3 py-1 cursor-pointer bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300"
+              >
+                ¿Qué tipo de contenido publicaba HChat?
+              </button>
+              <button
+                onClick={() => handleSendMessage('¿Quiénes eran los principales colaboradores de Diario de la Marina?')}
+                className="px-3 py-1 cursor-pointer bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300"
+              >
+                ¿Quiénes eran los principales colaboradores de Diario de la Marina?
+              </button>
+            </div>
           </div>
         )}
       </div>
-
-      {/* Input del chat */}
-      <div className={`w-full max-w-4xl mx-auto px-2 sm:px-4 ${!uid ? 'flex items-center justify-center' : ''}`}>
+      <div className="w-full max-w-4xl mx-auto px-4 py-2">
         <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
       </div>
-
-      {/* Pie de página */}
-      <p className="text-center text-gray-500 text-sm py-2">
-        HChat. Diario de la Marina 1844-1960 {year}
-      </p>
+      <footer className="text-center text-gray-500 text-sm py-2 select-none">
+        HChat {year} © Diario de la Marina 1844-1960 
+      </footer>
     </div>
   );
 };

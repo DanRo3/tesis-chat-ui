@@ -4,7 +4,7 @@ import { UserDetails } from "../../types/interfaces";
 export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
-  user: UserDetails
+  user: UserDetails;
   loading: boolean;
   error: string | null;
 }
@@ -24,19 +24,19 @@ const initialState: AuthState = {
   user: localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user")!)
     : {
-      duid: "",
-      is_active: false,
-      email: "",
-      user_name: "",
-      is_premium: false,
-      is_staff: 0,
-      is_superuser: 0,
-      day_expense: 0,
-      daily_spending_limit: 0,
-      spending: 0,
-      count_emote: 0,
-      count_emote_image: 0,
-    },
+        uid: "",
+        is_active: false,
+        email: "",
+        username: "",
+        is_premium: false,
+        is_staff: 0,
+        is_superuser: 0,
+        day_expense: 0,
+        daily_spending_limit: 0,
+        spending: 0,
+        count_emote: 0,
+        count_emote_image: 0,
+      },
   loading: false,
   error: null,
 };
@@ -47,8 +47,18 @@ const fetchFromApi = async (url: string, options: RequestInit) => {
   const response = await fetch(url, options);
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || "Error en la solicitud");
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      throw new Error("Error en la solicitud");
+    }
+    
+    if (errorData && errorData.username && Array.isArray(errorData.username)) {
+      throw new Error(errorData.username[0]);
+    } else {
+      throw new Error(errorData.detail || "Error en la solicitud");
+    }
   }
 
   return response.json();
@@ -58,7 +68,7 @@ export const authenticateUser = createAsyncThunk(
   "auth/authenticateUser",
   async (
     { username, password }: { username: string; password: string },
-    { dispatch, rejectWithValue }
+    { rejectWithValue }
   ) => {
     try {
       const data = await fetchFromApi(`${baseUrl}/auth/jwt/create/`, {
@@ -71,8 +81,6 @@ export const authenticateUser = createAsyncThunk(
 
       const { refresh: refreshToken, access: token } = data;
 
-      dispatch(fetchUserData());
-
       return { token, refreshToken };
     } catch (error) {
       if (error instanceof Error) {
@@ -80,6 +88,29 @@ export const authenticateUser = createAsyncThunk(
       } else {
         return rejectWithValue("Error desconocido");
       }
+    }
+  }
+);
+
+export const createUser = createAsyncThunk(
+  "auth/createUser",
+  async (
+    { email, username, password, re_password }: { email: string; username: string; password: string; re_password: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const data = await fetchFromApi(`${baseUrl}/auth/users/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, username, password, re_password }),
+      });
+
+      return data;
+    } catch (error: any) {
+      // Estandariza el formato del error
+      return rejectWithValue(error);
     }
   }
 );
@@ -93,17 +124,12 @@ export const fetchUserData = createAsyncThunk(
         headers: {
           Authorization: `JWT ${localStorage.getItem("accessToken")}`,
         },
+        
       });
 
       return data;
     } catch (error) {
-      if (error instanceof Error) {
-        return rejectWithValue(error.message);
-      } else {
-        return rejectWithValue(
-          "Error desconocido al obtener datos del usuario"
-        );
-      }
+      return rejectWithValue(error);
     }
   }
 );
@@ -149,15 +175,15 @@ export const authSlice = createSlice({
         uid: null,
         is_active: null,
         email: null,
-        user_name: null,
+        username: null,
         is_premium: null,
         is_staff: null,
         is_superuser: null,
         day_expense: null,
+        daily_spending_limit: null,
         spending: null,
         count_emote: null,
         count_emote_image: null,
-        daily_spending_limit: null,
       };
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
@@ -198,6 +224,19 @@ export const authSlice = createSlice({
       })
       .addCase(refreshToken.rejected, (state, action) => {
         state.error = action.payload as string;
+      })
+      .addCase(createUser.pending, (state: AuthState) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createUser.fulfilled, (state: AuthState) => {
+        state.loading = false;
+        state.error = null;
+        // Handle successful user creation (e.g., store user data, redirect)
+      })
+     .addCase(createUser.rejected, (state: AuthState, action: any) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

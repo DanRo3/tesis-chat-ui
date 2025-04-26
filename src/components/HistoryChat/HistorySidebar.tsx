@@ -1,13 +1,8 @@
 import React, { useCallback, useRef, useState } from "react";
 import { RootState } from "../../redux/store/store";
-import {
-  BsLayoutSidebarInset,
-  BsLayoutSidebarInsetReverse,
-} from "react-icons/bs";
-import { FiEdit } from "react-icons/fi";
 import Logo from "../../../public/logo.png";
 import { useNavigate } from "react-router-dom";
-import { TbLogout } from "react-icons/tb";
+import { IoIosLogOut } from "react-icons/io";
 import { useAppDispatch, useAppSelector } from "../../hooks/useStore";
 import { useEffect } from "react";
 import {
@@ -19,7 +14,10 @@ import {
 import { Dropdown, Menu, message } from "antd";
 import { MoreOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { newConversation, setCurrentConversationId } from "../../redux/chats/slice";
-import { RiChatHistoryLine } from "react-icons/ri";
+import { RiChatHistoryLine, RiMenu2Fill, RiMenu3Fill } from "react-icons/ri";
+import { AiOutlineLoading } from "react-icons/ai";
+import { BsChatSquareText } from "react-icons/bs";
+import { PiChatBold } from "react-icons/pi";
 
 export const HistorySidebar: React.FC<{
   isCompressed: boolean;
@@ -154,7 +152,7 @@ export const HistorySidebar: React.FC<{
   const handleNewConversation = () => {
     setIsLoading(true);
     console.log("new conversation");
-    navigate("/c/");
+    navigate("/chat/");
     dispatch(newConversation());
     setIsLoading(false);
 
@@ -177,48 +175,53 @@ export const HistorySidebar: React.FC<{
   return (
     <div
       className={`
-      bg-[#9d7a68] text-black transition-all duration-300 ease-in-out
-      ${isCompressed ? "w-0" : "md:w-64 w-full"}
-      h-full overflow-y-auto relative
-    `}
+        bg-gray-200 text-black transition-all duration-300 ease-in-out
+        ${isCompressed ? "hidden" : "md:w-64 w-full"}
+        h-full flex flex-col
+      `}
     >
-      <div className="flex items-center justify-between h-10 text-2xl px-4 mt-2">
-        <button
-          onClick={() => onToggleCompression(!isCompressed)}
-          className="text-black cursor-pointer hover:bg-[#cba694] p-2 rounded-lg"
-        >
-          {isCompressed ? (
-            <BsLayoutSidebarInset />
-          ) : (
-            <BsLayoutSidebarInsetReverse />
-          )}
-        </button>
-        <button className=" cursor-pointer hover:bg-[#cba694] p-2 rounded-lg" onClick={handleNewConversation} disabled={isLoading}>
-          {isLoading ? <FiEdit className="text-black animate-spin" /> : <FiEdit className="text-black" />}
-        </button>
-      </div>
-
-      <div className="flex items-center justify-between pl-4 cursor-pointer  mx-4 my-6 rounded-xl hover:bg-[#cba694] group">
-        <div className="flex items-center" onClick={handleNewConversation}>
-          <div className="rounded-full bg-[#F2EFE7] border-[1px] border-gray-300">
-            <img src={Logo} alt="Netsy" height={30} width={30} />
-          </div>
-          <div className="p-3">HChat.</div>
+      {/* Header */}
+      <div>
+        <div className="flex items-center justify-between h-10 text-2xl px-4 mt-2">
+          <button
+            onClick={() => onToggleCompression(!isCompressed)}
+            className="text-black cursor-pointer hover:bg-[#cba694] p-2 rounded-lg"
+          >
+            {isCompressed ? (
+              <RiMenu2Fill />
+            ) : (
+              <RiMenu3Fill />
+            )}
+          </button>
+          <button className=" cursor-pointer hover:bg-[#cba694] p-2 rounded-lg" onClick={handleNewConversation} disabled={isLoading}>
+            {isLoading ? <PiChatBold className="text-black animate-spin" /> : <PiChatBold className="text-black" />}
+          </button>
         </div>
-        <button className="cursor-pointer p-2 opacity-0 group-hover:opacity-100">
-          <FiEdit className="text-black" />
-        </button>
+
+        <div className="flex items-center justify-between pl-4 cursor-pointer  mx-4 my-6 rounded-xl hover:bg-[#cba694] group">
+          <div className="flex items-center" onClick={handleNewConversation}>
+            <div className="rounded-full bg-[#F2EFE7] border-[1px] border-gray-300">
+              <img src={Logo} alt="Netsy" height={30} width={30} />
+            </div>
+            <div className="p-3">HChat.</div>
+          </div>
+          <button className="cursor-pointer p-2 opacity-0 group-hover:opacity-100">
+            <PiChatBold className="text-black" />
+          </button>
+        </div>
+
+        <div className="flex items-center pl-4 select-none mx-4 mb-4 gap-2">
+          <RiChatHistoryLine className="text-black text-2xl"/>
+          <h1 className="text-lg font-semibold">Historial</h1>
+        </div>
       </div>
 
-      <div className="flex items-center pl-4 select-none mx-4 mb-4 gap-2">
-        <RiChatHistoryLine className="text-black text-2xl"/>
-        <h1 className="text-lg font-semibold">Historial</h1>
-      </div>
-
-      <div className="p-4 pt-4 h-[60vh] overflow-y-auto rounded-xl">
+      {/* Historial (flex-grow, scrollable) */}
+      <div className="flex-1 p-4 mx-2 rounded-xl bg-gray-100 overflow-y-auto scrollbar-hide min-h-0">
         {historyChat.results.chats.length === 0 ? (
-          <div className="text-center text-gray-500">
+          <div className="flex flex-col justify-center items-center text-center text-gray-500">
             No conversations found
+            <BsChatSquareText className="text-5xl mt-4" />
           </div>
         ) : (
           <>
@@ -288,23 +291,22 @@ export const HistorySidebar: React.FC<{
           </>
         )}
         <div ref={observerRef} />
+        {loading && (
+          <div className="flex justify-center items-center text-white animate-spin">
+            <AiOutlineLoading />
+          </div>
+        )}
       </div>
-      {loading && (
-        <div className="flex justify-center items-center text-white mt-4">
-          Loading more chats...
-        </div>
-      )}
 
-      <div className="absolute bottom-0 left-0 w-full h-16 p-4 flex items-center">
-        <div className="flex items-center w-full justify-between flex-row select-none cursor-pointer">
-          <span className="font-semibold">{user.email}</span>
-          <button
-            className="text-2xl cursor-pointer ml-2 hover:bg-[#cba694] p-2 rounded-lg"
-            onClick={handleLogout}
-          >
-            <TbLogout />
-          </button>
-        </div>
+      {/* Footer (email + logout) */}
+      <div className="h-16 px-4 flex items-center justify-between border-t border-gray-300 bg-gray-200 select-none">
+        <span className="font-semibold truncate max-w-[60%]">{user.email}</span>
+        <button
+          className="text-2xl cursor-pointer ml-2 hover:bg-[#cba694] p-2 rounded-lg"
+          onClick={handleLogout}
+        >
+          <IoIosLogOut />
+        </button>
       </div>
     </div>
   );

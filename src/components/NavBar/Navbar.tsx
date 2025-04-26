@@ -1,9 +1,5 @@
-
-import {
-  BsLayoutSidebarInset,
-  BsLayoutSidebarInsetReverse,
-} from "react-icons/bs";
-import { FiEdit } from "react-icons/fi";
+import { PiChatBold } from "react-icons/pi";
+import { RiMenu2Fill, RiMenu3Fill } from "react-icons/ri";
 
 
 export const Navbar: React.FC<{
@@ -19,13 +15,13 @@ export const Navbar: React.FC<{
           <div className="flex items-center w-16 justify-between h-10 text-2xl">
             <button onClick={() => onToggleCompression(!isCompressed)} className="text-black cursor-pointer hover:bg-[#F2EFE7] p-2 rounded-lg">
               {isCompressed ? (
-                <BsLayoutSidebarInset />
+                <RiMenu2Fill />
               ) : (
-                <BsLayoutSidebarInsetReverse />
+                <RiMenu3Fill />
               )}
             </button>
             <button className="hover:bg-[#F2EFE7] p-2 rounded-lg ml-2 cursor-pointer">
-              <FiEdit className="text-black" />
+              <PiChatBold className="text-black" />
             </button>
           </div>
         )}
