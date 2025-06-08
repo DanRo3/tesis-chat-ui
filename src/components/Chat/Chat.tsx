@@ -5,8 +5,8 @@ import { createConversation, getConversationDetails, renameConversation, sendMes
 import { useAppSelector, useAppDispatch } from '../../hooks/useStore';
 import { v4 as uuidv4 } from 'uuid';
 import { addMessageToConversation } from '../../redux/chats/slice';
-import Logo from '../../../public/logo.png';
 import { message } from 'antd';
+import Logo from '../../../public/logo.png';
 
 export const Chat: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -40,7 +40,7 @@ export const Chat: React.FC = () => {
   };
 
   const editTitle = async()=>{
-    if(current.currentConversation.chat.title === "New Conversation" && current.currentConversation.chat.chat_messages.length>=1){
+    if(current.currentConversation.chat.title === "Nueva Conversación" && current.currentConversation.chat.chat_messages.length>=1){
       let newTitle = current.currentConversation.chat.chat_messages[1].text_message.slice(0, 20);
       await dispatch(renameConversation({ id: uid, newTitle: newTitle })).unwrap();
     }
@@ -85,23 +85,7 @@ export const Chat: React.FC = () => {
       <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-4 scrollbar-hide" ref={chatRef}>
         {uid ? (
           <div className="h-full">
-            <MessageList messages={messages} />
-            {isLoading && (
-              <div className='flex items-center pb-10 px-4 animate-fade-in'>
-                <div className="flex items-center gap-2">
-                  <img 
-                    src={Logo} 
-                    alt="HChat esta buscando..." 
-                    className='w-6 h-6 animate-pulse'
-                  />
-                  <div className="flex gap-1">
-                    <div className="w-1.5 h-1.5 bg-amber-500/30 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-1.5 h-1.5 bg-amber-500/50 rounded-full animate-bounce"></div>
-                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <MessageList messages={messages} isLoading={isLoading}/>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -110,22 +94,22 @@ export const Chat: React.FC = () => {
             <p className="text-gray-500 mt-2 mb-4">Selecciona una pregunta para comenzar:</p>
             <div className="flex flex-wrap justify-center gap-2">
               <button
-                onClick={() => handleSendMessage('¿Cuál es la historia de Diario de la Marina?')}
+                onClick={() => handleSendMessage('Generame una gráfica de los barcos que entraron a La Habana de Barcelona por año.')}
                 className="px-3 cursor-pointer py-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300"
               >
-                ¿Cuál es la historia de Diario de la Marina?
+                Generame una gráfica de los barcos que entraron a La Habana de Barcelona por año.
               </button>
               <button
-                onClick={() => handleSendMessage('¿Qué tipo de contenido publicaba HChat?')}
+                onClick={() => handleSendMessage('¿Cuál es al año de más arrivos de Barcos al puerto de La Habana?')}
                 className="px-3 py-1 cursor-pointer bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300"
               >
-                ¿Qué tipo de contenido publicaba HChat?
+                ¿Cuál es al año de más arrivos de Barcos al puerto de La Habana?
               </button>
               <button
                 onClick={() => handleSendMessage('¿Quiénes eran los principales colaboradores de Diario de la Marina?')}
                 className="px-3 py-1 cursor-pointer bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300"
               >
-                ¿Quiénes eran los principales colaboradores de Diario de la Marina?
+                ¿Qué es el Diario de la Marina?
               </button>
             </div>
           </div>

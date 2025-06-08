@@ -139,8 +139,8 @@ export const createConversation = createAsyncThunk(
           Authorization: `JWT ${localStorage.getItem("accessToken")}`,
         },
         body: JSON.stringify({
-          title: "New Conversation",
-          description: "This is a new conversation",
+          title: "Nueva Conversación",
+          description: "Esta es una nueva conversación",
         }),
       });
       return data as Chats;

@@ -12,12 +12,17 @@ import { useAppSelector, useAppDispatch } from '../../hooks/useStore';
 import { sendMessage } from '../../redux/chats/actions';
 import { removeFailedMessage } from '../../redux/chats/slice';
 import ScrollToBottomButton from '../Common/ScroolToBottom';
+import Logo from '../../../public/logo.png';
+import { LuDownload } from 'react-icons/lu';
+import { IoClose } from 'react-icons/io5';
 
 interface MessageListProps {
   messages: Message[];
+  isLoading: boolean;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
+  const baseUrl = import.meta.env.VITE_IMAGE_ROUTE;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isButtonVisible, setIsButtonVisible] = useState(false);
@@ -25,6 +30,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
   const [likedMessages, setLikedMessages] = useState<{ [key: string]: 'up' | 'down' | null }>({});
   const [completedMessages, setCompletedMessages] = useState<Set<string>>(new Set());
   const [resendLoading, setResendLoading] = useState<Set<string>>(new Set());
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
   const failedMessages = useAppSelector(state => state.conversations.failedMessages);
@@ -41,6 +47,31 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
       ...prev,
       [messageId]: prev[messageId] === type ? null : type
     }));
+  };
+
+  const handleImageClick = (imageUrl: string) => {
+    setFullScreenImage(imageUrl);
+  };
+
+  const handleDownloadImage = async (imageUrl: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', imageUrl.substring(imageUrl.lastIndexOf('/') + 1));
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+    }
+  };
+
+  const closeFullScreenImage = () => {
+    setFullScreenImage(null);
   };
 
   useEffect(() => {
@@ -82,8 +113,6 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     setIsButtonVisible(false);
   };
 
-
-
   const handleRetry = async (msg: Message) => {
     setResendLoading(prev => new Set(prev).add(msg.uid));
     try {
@@ -106,8 +135,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
   };
 
   return (
-    <>
-      <div className="relative w-full h-full flex-1">
+    
+      <div className="relative w-full h-full flex-1 ">
         <div
           ref={containerRef}
           className="flex flex-col w-full px-2 sm:px-4 max-w-full overflow-y-auto overflow-x-hidden h-full scrollbar-hide"
@@ -128,11 +157,23 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
                 'items-start max-w-[85%] sm:max-w-[100%]': message.rol === 'assistant',
               })}>
                 {message.rol === 'user' && message.image && (
-                  <img
-                    src={message.image}
-                    alt="Uploaded content"
-                    className="rounded-md mt-3 max-w-[300px] max-h-[300px] object-contain mb-3"
-                  />
+                  <div className="relative">
+                    <img
+                      src={`${baseUrl}${message.image}`}
+                      alt="Uploaded content"
+                      className="rounded-md mt-3 max-w-[300px] max-h-[300px] object-contain mb-3 cursor-pointer"
+                      onClick={() => handleImageClick(`${baseUrl}${message.image}`)}
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadImage(`${baseUrl}${message.image}`);
+                      }}
+                      className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
+                      title="Descargar imagen">
+                      <LuDownload className="w-4 h-4" />
+                    </button>
+                  </div>
                 )}
                 <div
                   className={clsx(
@@ -162,11 +203,23 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
                     {message.text_message as string}
                   </Markdown>
                   {message.rol === 'assistant' && message.image && (
-                    <img
-                      src={message.image}
-                      alt="Uploaded content"
-                      className="rounded-md mt-3 max-w-[300px] max-h-[300px] object-contain mb-3"
-                    />
+                    <div className="relative">
+                      <img
+                        src={message.image}
+                        alt="Uploaded content"
+                        className="rounded-md mt-3 max-w-[500px] max-h-[500px] object-contain mb-3 cursor-pointer"
+                        onClick={() => message.image && handleImageClick(message.image)}
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          message.image && handleDownloadImage(message.image);
+                        }}
+                        className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
+                        title="Descargar imagen">
+                        <LuDownload className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                   {message.rol === 'assistant' && (
                     <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-md mt-3">
@@ -237,13 +290,49 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
               ))}
             </div>
           ))}
+          {isLoading && (
+              <div className='flex items-center pb-10 px-4 animate-fade-in'>
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={Logo} 
+                    alt="HChat esta buscando..." 
+                    className='w-6 h-6 animate-pulse'
+                  />
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 bg-amber-500/30 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-1.5 h-1.5 bg-amber-500/50 rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                  </div>
+                </div>
+              </div>
+            )}
           <div ref={messagesEndRef} />
         </div>
         <ScrollToBottomButton onClick={scrollToBottom} isVisible={isButtonVisible} />
-      </div>
       <ToastContainer />
-    </>
+      {fullScreenImage && (
+        <div className="fixed top-0 left-0 w-full h-full bg-black/70 z-50 flex items-center justify-center" onClick={closeFullScreenImage}>
+          <img src={fullScreenImage} alt="Full screen" className="max-w-full max-h-full object-contain" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownloadImage(fullScreenImage);
+            }}
+            className="absolute top-2 right-8 bg-black/50 text-white rounded-full p-2 hover:bg-black/70"
+            title="Descargar imagen">
+            <LuDownload className="w-6 h-6" />
+          </button>
+          <button
+            onClick={closeFullScreenImage}
+            className="absolute top-2 left-2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70"
+            title="Cerrar"
+          >
+            <IoClose className="w-6 h-6"/>
+          </button>
+        </div>
+      )}
+    </div>
   );
-};
+}
 
 export default MessageList;

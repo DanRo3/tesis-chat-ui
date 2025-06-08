@@ -9,7 +9,7 @@ export const Navbar: React.FC<{
 
 
   return (
-    <nav className="bg-white text-gray-700 w-full h-16 flex items-center justify-between px-4">
+    <nav className="bg-white text-gray-700 w-full h-16 flex items-center shadow justify-between px-4">
       <div className="flex items-center">
         {isCompressed && (
           <div className="flex items-center w-16 justify-between h-10 text-2xl">

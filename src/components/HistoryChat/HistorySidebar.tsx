@@ -15,7 +15,7 @@ import { Dropdown, Menu, message } from "antd";
 import { MoreOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { newConversation, setCurrentConversationId } from "../../redux/chats/slice";
 import { RiChatHistoryLine, RiMenu2Fill, RiMenu3Fill } from "react-icons/ri";
-import { AiOutlineLoading } from "react-icons/ai";
+import { ImSpinner3 } from "react-icons/im";
 import { BsChatSquareText } from "react-icons/bs";
 import { PiChatBold } from "react-icons/pi";
 
@@ -272,9 +272,9 @@ export const HistorySidebar: React.FC<{
                         onClick={() =>
                           handleStartEditing(conversation.uid, conversation.title)
                         }
-                        className="opacity-0 group-hover:opacity-100 ml-2"
+                        className="opacity-0 group-hover:opacity-100 ml-2 "
                       >
-                        <EditOutlined className="text-gray-500 hover:text-gray-700" />
+                        <EditOutlined className="text-gray-500  hover:text-gray-700" />
                       </button>
                     </div>
                     <Dropdown
@@ -292,15 +292,15 @@ export const HistorySidebar: React.FC<{
         )}
         <div ref={observerRef} />
         {loading && (
-          <div className="flex justify-center items-center text-white animate-spin">
-            <AiOutlineLoading />
+          <div className="flex justify-center items-center text-[#6f4c3b] animate-spin mb-2">
+            <ImSpinner3 />
           </div>
         )}
       </div>
 
       {/* Footer (email + logout) */}
       <div className="h-16 px-4 flex items-center justify-between border-t border-gray-300 bg-gray-200 select-none">
-        <span className="font-semibold truncate max-w-[60%]">{user.email}</span>
+        <span className="font-semibold truncate max-w-[80%]">{user.email}</span>
         <button
           className="text-2xl cursor-pointer ml-2 hover:bg-[#cba694] p-2 rounded-lg"
           onClick={handleLogout}
